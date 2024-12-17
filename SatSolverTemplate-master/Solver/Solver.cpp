@@ -97,48 +97,7 @@ namespace sat {
 
 
 bool Solver::unitPropagate() {
-    while (!unitLiterals.empty()) {
-        Literal l = unitLiterals.back();
-        unitLiterals.pop_back();
-
-        if (!assign(l)) {
-            return false;
-        }
-
-        auto& clausesToUpdate = literalClauses[l.negate().get()];
-        for (auto it = clausesToUpdate.begin(); it != clausesToUpdate.end();) {
-            auto clausePtr = *it;
-            short r = clausePtr->getRank(l);
-            short other_r = 1 - r;
-            Literal otherWatcher = clausePtr->getWatcherByRank(other_r);
-
-            bool foundNewWatcher = false;
-
-            for (size_t i = 0; i < clausePtr->size(); ++i) {
-                Literal p = (*clausePtr)[i];
-                if (p != l && p != otherWatcher && !falsified(p)) {
-                    clausePtr->setWatcher(p, r);
-                    literalClauses[p.get()].push_back(clausePtr);
-                    it = clausesToUpdate.erase(it);
-                    foundNewWatcher = true;
-                    break;
-                }
-            }
-
-            if (!foundNewWatcher) {
-                if (falsified(otherWatcher)) {
-                    return false;
-                } else if (!satisfied(otherWatcher)) {
-                    unitLiterals.push_back(otherWatcher);
-                    if (!assign(otherWatcher)) {
-                        return false;
-                    }
-                }
-                ++it;
-            }
-        }
-    }
-    return true;
+    
 }
-
-}
+    
+} // namespace sat

@@ -1,3 +1,6 @@
+M'Rick Robin-Charlet
+M2 RO
+
 # SatSolverTemplate
 SAT solver template for a course (TP) at INSA Toulouse.
 

@@ -102,7 +102,6 @@ namespace sat {
          */
         bool unitPropagate();
 
-
     };
 } // sat
 
