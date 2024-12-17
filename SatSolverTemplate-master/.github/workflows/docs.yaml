@@ -1,0 +1,29 @@
+name: documentation
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+env:
+  DOCS_OUT_DIR: docs
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install dependencies
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+      - name: create output dir
+        run: mkdir -p ${{ env.DOCS_OUT_DIR }}
+      - name: run doxygen
+        run: |
+          doxygen .github/workflows/Doxyfile
+      - name: deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ${{ env.DOCS_OUT_DIR }}/html
+          branch: gh-pages

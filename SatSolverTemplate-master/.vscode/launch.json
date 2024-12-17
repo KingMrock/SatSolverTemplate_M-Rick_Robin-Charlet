@@ -1,0 +1,66 @@
+{
+    "version": "0.2.0",
+        "configurations": [
+        {
+            "name": "Run current target (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            // put your program arguments here, for example the path to the problem. Arguments must be strings separated by ','
+            "args": ["eval/sat/medium/bw_large.b.cnf", "--example-flag", "example-value"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+            {
+                "name": "PATH",
+                "value": "${env:PATH}:${command:cmake.getLaunchTargetDirectory}"
+            }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+            ]
+        },
+        {
+            "name": "Run current target (lldb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            // put your program arguments here, for example the path to the problem. Arguments must be strings separated by ','
+            "args": ["eval/sat/medium/bw_large.b.cnf", "--example-flag", "example-value"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+            {
+                "name": "PATH",
+                "value": "${env:PATH}:${command:cmake.getLaunchTargetDirectory}"
+            }
+            ],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
+            "name": "Run current target (msvc)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            // put your program arguments here, for example the path to the problem. Arguments must be strings separated by ','
+            "args": ["eval/sat/medium/bw_large.b.cnf", "--example-flag", "example-value"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+            {
+                // add the directory where our target was built to the PATHs
+                // it gets resolved by CMake Tools:
+                "name": "PATH",
+                "value": "${env:PATH}:${command:cmake.getLaunchTargetDirectory}"
+            }
+            ],
+        }
+    ]
+}
