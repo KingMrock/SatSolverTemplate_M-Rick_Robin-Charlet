@@ -1,108 +1,97 @@
-/**
-* @author Tim Luchterhand
-* @date 26.11.24
-* @brief
-*/
-
-#include <cassert>
 #include <algorithm>
-#include <unordered_set>
-
 #include "Clause.hpp"
 #include "util/exception.hpp"
 
-
 namespace sat {
 
-    Clause::Clause() 
-        : literals(), 
-          watchers{Literal(0), Literal(0)} {}
-
-    Clause::Clause(std::vector<Literal> literals) 
-        : literals(std::move(literals)), 
-          watchers{Literal(0), Literal(0)} {
-        if (this->literals.size() >= 2) {
-            watchers[0] = this->literals[0];
-            watchers[1] = this->literals[1];
-        } else if (this->literals.size() == 1) {
-            watchers[0] = this->literals[0];
-            watchers[1] = Literal(0); // Assuming default constructor for Literal
+    Clause::Clause(std::vector<Literal> literals)
+        : mLits(std::move(literals))
+    {
+        // If we have at least one literal, watch literal at index 0
+        // If we have 2 or more, watch literal at index 1
+        // If only one literal, watchers both refer to index 0
+        if (!mLits.empty()) {
+            mWatchIndex[0] = 0;
+            mWatchIndex[1] = (mLits.size() > 1) ? 1 : 0;
         }
     }
 
     short Clause::getRank(Literal l) const {
-        if (watchers[0] == l) return 0;
-        if (watchers[1] == l) return 1;
-        return -1;
+        if (!mLits.empty() && mLits[mWatchIndex[0]] == l) {
+            return 0;
+        }
+        if (!mLits.empty() && mLits[mWatchIndex[1]] == l) {
+            return 1;
+        }
+        return -1; // l is not a watcher
     }
 
     std::size_t Clause::getIndex(short rank) const {
-        if (rank < 0 || rank >= 2) {
-            throw std::out_of_range("Rank out of range");
-        }
-        auto it = std::find(literals.begin(), literals.end(), watchers[rank]);
-        if (it != literals.end()) {
-            return std::distance(literals.begin(), it);
-        }
-        throw std::out_of_range("Watcher not found in literals");
+        // Return the index in mLits for the requested watcher rank
+        return (rank == 0) ? mWatchIndex[0] : mWatchIndex[1];
     }
 
     bool Clause::setWatcher(Literal l, short watcherNo) {
-        if (watcherNo < 0 || watcherNo >= 2) {
-            throw std::out_of_range("Watcher number out of range");
+        // Find l in the clause
+        auto it = std::find(mLits.begin(), mLits.end(), l);
+        if (it == mLits.end()) {
+            return false;  // literal not found
         }
-        auto it = std::find(literals.begin(), literals.end(), l);
-        if (it != literals.end()) {
-            watchers[watcherNo] = l;
-            return true;
-        }
-        return false;
-    }
-
-    auto Clause::begin() const -> std::vector<Literal>::const_iterator {
-        return literals.begin();
-    }
-
-    auto Clause::end() const -> std::vector<Literal>::const_iterator {
-        return literals.end();
-    }
-
-    bool Clause::isEmpty() const {
-        return literals.empty();
-    }
-
-    Literal Clause::operator[](std::size_t index) const {
-        if (index < literals.size()) {
-            return literals[index];
-        }
-        throw std::out_of_range("Index out of range");
-    }
-
-    std::size_t Clause::size() const {
-        return literals.size();
-    }
-
-    Literal Clause::getWatcherByRank(short rank) const {
-        if (rank >= 0 && rank < 2) {
-            return watchers[rank];
-        }
-        throw std::out_of_range("Rank out of range");
-    }
-
-    bool Clause::sameLiterals(const Clause &other) const {
-        if (literals.size() != other.literals.size()) {
-            return false;
-        }
-        std::unordered_set<unsigned> literalSet;
-        for (const auto& literal : literals) {
-            literalSet.insert(literal.get());
-        }
-        for (const auto& literal : other.literals) {
-            if (literalSet.find(literal.get()) == literalSet.end()) {
-                return false;
-            }
+        // Found it; set watcher
+        std::size_t idx = static_cast<std::size_t>(std::distance(mLits.begin(), it));
+        if (watcherNo == 0) {
+            mWatchIndex[0] = idx;
+        } else {
+            mWatchIndex[1] = idx;
         }
         return true;
     }
 
-}
+    Literal Clause::getWatcherByRank(short rank) const {
+        // Return the literal that the rank-th watcher points to
+        return (rank == 0)
+            ? mLits[mWatchIndex[0]]
+            : mLits[mWatchIndex[1]];
+    }
+
+    auto Clause::begin() const -> std::vector<Literal>::const_iterator {
+        return mLits.begin();
+    }
+
+    auto Clause::end() const -> std::vector<Literal>::const_iterator {
+        return mLits.end();
+    }
+
+    bool Clause::isEmpty() const {
+        return mLits.empty();
+    }
+
+    Literal Clause::operator[](std::size_t index) const {
+        return mLits[index];
+    }
+
+    std::size_t Clause::size() const {
+        return mLits.size();
+    }
+
+    bool Clause::sameLiterals(const Clause &other) const {
+        // Quick check: same size => then do a sorted compare
+        if (mLits.size() != other.mLits.size()) {
+            return false;
+        }
+
+        // Make copies, sort them by their .get() value
+        std::vector<Literal> mine = mLits;
+        std::vector<Literal> theirs = other.mLits;
+
+        auto cmp = [](const Literal &a, const Literal &b){
+            return a.get() < b.get();
+        };
+
+        std::sort(mine.begin(), mine.end(), cmp);
+        std::sort(theirs.begin(), theirs.end(), cmp);
+
+        return (mine == theirs);
+    }
+
+} // namespace sat

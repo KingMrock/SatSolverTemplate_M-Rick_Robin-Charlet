@@ -1,7 +1,3 @@
-/**
-* @brief
-*/
-
 #include "basic_structures.hpp"
 #include "util/exception.hpp"
 
@@ -30,7 +26,9 @@ namespace sat {
     }
 
     short Literal::sign() const {
-        return (val & 1) ? 1 : -1;
+        // even => negative literal => -1
+        // odd  => positive literal => +1
+        return (val % 2 == 0) ? -1 : 1;
     }
 
     bool Literal::operator==(Literal other) const {
@@ -39,14 +37,17 @@ namespace sat {
 
     // Helper functions
     Literal pos(Variable x) {
-        return Literal((x.get() << 1) | 1); // Use bitwise shift to create positive literal
+        // positive literal is an odd number: 2*v + 1
+        return Literal(2 * x.get() + 1);
     }
 
     Literal neg(Variable x) {
-        return Literal(x.get() << 1); // Use bitwise shift to create negative literal
+        // negative literal is an even number: 2*v
+        return Literal(2 * x.get());
     }
 
     Variable var(Literal l) {
-        return Variable(l.get() >> 1); // Use bitwise shift to get variable from literal
+        // variable id is literal_id >> 1
+        return Variable(l.get() >> 1);
     }
 }

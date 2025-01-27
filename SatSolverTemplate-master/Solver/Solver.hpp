@@ -9,61 +9,60 @@
 #define SOLVER_HPP
 
 #include <memory>
-
+#include <deque>
+#include <vector>
 #include "basic_structures.hpp"
 #include "Clause.hpp"
 
 namespace sat {
-    /*
-     * These two types might be useful for your implementation. A shared pointer manages an object on the heap. It can
-     * be copied without copying the actual object. This can be useful if you want to access the same clause from
-     * multiple locations without copying it. Once all copies of the pointer have been destroyed, the actual object
-     * is also destroyed
-     */
+
     using ClausePointer = std::shared_ptr<Clause>;
     using ConstClausePointer = std::shared_ptr<const Clause>;
-
 
     /**
      * @brief Main solver class
      */
     class Solver {
-        
-        std::vector<ClausePointer> clauses; 
-        std::vector<Literal> unitLiterals;
-        std::vector<TruthValue> model;
-        //Add a list of clause for each literal
-        std::vector<std::vector<ClausePointer>> literalClauses;
-        
-    public:
+    private:
+        // For each variable x, we store the current assignment:
+        // True, False, or Undefined (unassigned).
+        std::vector<TruthValue> mModel;
 
+        // We store all clauses in shared pointers.
+        std::vector<ClausePointer> mClauses;
+
+        // For watch-literal propagation:
+        // watchers[literal_id] is a list of clauses currently watching that literal.
+        // If lit has ID = l.get(), watchers[lit.get()] returns all clauses that have lit as a watcher.
+        std::vector<std::vector<ClausePointer>> mWatchers;
+
+        // A queue (FIFO) of newly assigned literals for unit propagation.
+        std::deque<Literal> mUnitQueue;
+
+        // Helper function to map a Literal to its "index" for watchers.
+        // Since we store the ID in the literal, we can just use that directly.
+        inline std::size_t indexOf(Literal l) const {
+            return static_cast<std::size_t>(l.get());
+        }
+
+    public:
         /**
          * Ctor. Allocates enough space for the variables.
          * @param numVariables Number of variables in the problem
-         * @note This Ctor needs to exist for the tests. You can add other Ctors if you want
          */
         explicit Solver(unsigned numVariables);
-
-        /*
-         * @TODO if you want, you can declare additional constructors here
-         */
-
-
-        /*
-         * You can design the interface of your solver as you want. You can for example add clauses already in the
-         * constructor. The tests require the addClause method, however.
-         */
 
         /**
          * Adds a clause to the solver.
          * @param clause The clause to add
-         * @return bool true if clause was successfully added, false if clause is empty or unit and violates the current
-         * model
+         * @return bool true if clause was successfully added,
+         *              false if clause is empty or conflicts immediately with the current model
          */
         bool addClause(Clause clause);
 
         /**
-         * Returns a reduced set of clauses. Excludes satisfied clauses and removes falsified literals from clauses
+         * Returns a reduced set of clauses. Excludes satisfied clauses
+         * and removes falsified literals from clauses.
          * @return equivalent set of clauses
          */
         auto rebase() const -> std::vector<Clause>;
@@ -76,33 +75,34 @@ namespace sat {
         TruthValue val(Variable x) const;
 
         /**
-         * Checks if a literal holds
-         * @param l literal (needs ti be contained in the solver)
-         * @return true if literal holds under current model, false otherwise
+         * Checks if a literal is satisfied under the current model
+         * @param l
+         * @return true if literal l is satisfied, false otherwise
          */
         bool satisfied(Literal l) const;
 
         /**
-         * Checks if a literal does not hold
-         * @param l literal (needs ti be contained in the solver)
-         * @return true if literal the negated literal is satisfied, false otherwise
+         * Checks if a literal is falsified under the current model
+         * @param l
+         * @return true if literal l is falsified, false otherwise
          */
         bool falsified(Literal l) const;
 
         /**
-         * Assigns the given literal
-         * @param l Literal to assign
-         * @return false if literal is already falsified, true otherwise
+         * Assigns the given literal to true in the model (if the literal is negative, the variable is set to false).
+         * @param l The literal to assign
+         * @return false if this literal is already falsified => conflict,
+         *         true otherwise
          */
         bool assign(Literal l);
 
         /**
-         * Does the unit propagation.
-         * @return true if unit propagation was successful, false otherwise
+         * Performs unit propagation until a fixpoint or a conflict is found.
+         * @return true if no conflict, false if conflict
          */
         bool unitPropagate();
-
     };
-} // sat
+
+} // namespace sat
 
 #endif //SOLVER_HPP
