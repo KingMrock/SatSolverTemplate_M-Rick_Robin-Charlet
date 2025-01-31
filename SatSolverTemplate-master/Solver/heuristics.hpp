@@ -30,6 +30,14 @@ namespace sat {
         Variable operator()(const std::vector<TruthValue> &model, std::size_t) const;
     };
 
+    /**
+     * @brief A simple random variable selection heuristic
+     *        picks one unassigned variable at random.
+     */
+    struct RandomVariable {
+        Variable operator()(const std::vector<TruthValue> &model, std::size_t numOpenVariables) const;
+    };
+
     namespace detail {
         /**
          * @brief This is a helper class for the implementation of a type erasure heuristic wrapper
